@@ -23,34 +23,28 @@ app.get("/api/products", (req, res) => {
 })
 
 app.post("/api/cart", async (req, res) => {
-    const { cartId, items, prodId, qty } = req.body
+    const { cartId, prodId, qty } = req.body
     try {
                 
         let cart = await CartModel.findOne({ cartId });
         if (!cart) {
             cart = new CartModel({ cartId, items: [], total: 0})
-        }
+        }        
         
-        
-        if (Array.isArray(items)) {
-            cart.items = items.filter((i) => i.qty > 0);
-        }
-        else if (prodId) {
-            const product = products.find((p) => p.id == prodId);
-            if (!product) return res.status(404).json({ error: "Product not found" })
-            const prodIdStr = String(prodId);
-            const existItem = cart.items.find((i) => String(i.productId) === prodIdStr);
+        const product = products.find((p) => p.id == prodId);
+        if (!product) return res.status(404).json({ error: "Product not found" })
+        const prodIdStr = String(prodId);
+        const existItem = cart.items.find((i) => String(i.productId) === prodIdStr);
 
-            if (existItem) {
-                existItem.qty += qty;
-            } else {
-                cart.items.push({
-                    productId: product.id,
-                    name: product.name,
-                    price: product.price,
-                    qty,
-                });
-            }
+        if (existItem) {
+            existItem.qty += qty;
+        } else {
+            cart.items.push({
+                productId: product.id,
+                name: product.name,
+                price: product.price,
+                qty,
+            });
         }
 
         cart.items = cart.items.filter((i) => i.qty > 0);        
@@ -123,7 +117,7 @@ app.post("/api/checkout", async (req, res) => {
       message: "Mock checkout successful — no payment processed.",
     };
 
-    // await CartModel.deleteOne({ cartId });
+    await CartModel.deleteOne({ cartId });
 
     res.json(receipt);
   } catch (err) {
