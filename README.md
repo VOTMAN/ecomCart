@@ -44,7 +44,7 @@ A simple **full-stack shopping cart** .
 ![Screenshot of Receipt Page](/public/receipt.png)
 
 ### Persistent Cart
-- Each user gets a unique cart ID stored in `localStorage`
+- Each user gets a unique cart ID stored in `localStorage` and `database`
 - Cart persists across page reloads (until checkout)
 
 ---
