@@ -1,7 +1,6 @@
 # 🛒 Mock E-Commerce Cart
 
-A simple **full-stack shopping cart** built for the Vibe Commerce screening assignment.  
-It demonstrates a realistic e-commerce flow — product browsing, cart management, and a mock checkout — using modern web technologies.
+A simple **full-stack shopping cart** .  
 
 ---
 
@@ -21,8 +20,10 @@ It demonstrates a realistic e-commerce flow — product browsing, cart managemen
 ### Product Page
 - Fetches live data from [FakeStore API](https://fakestoreapi.com/products)
 - Displays product grid with image, name, and price
-- "Add to Cart" button dynamically changes to “Add More” if item exists
+- "Add to Cart" button dynamically based on if the cart contains that specific item or not
 - Shows current quantity directly on the product card
+
+![Screenshot of Homepage](/public/products.png)
 
 ### Cart Page
 - Displays all items added to the cart
@@ -31,11 +32,16 @@ It demonstrates a realistic e-commerce flow — product browsing, cart managemen
 - Automatically updates the total cost
 - Reflects changes immediately across pages
 
+![Screenshot of Cart Page](/public/cart.png)
+
 ### Checkout Page
 - Simple form: Name + Email
 - Submits checkout request to backend
 - Generates a **mock receipt** (with order ID, timestamp, and summary)
 - Clears both the MongoDB cart and the local cart after successful checkout
+
+![Screenshot of Checkout Page](/public/checkout.png)
+![Screenshot of Receipt Page](/public/receipt.png)
 
 ### Persistent Cart
 - Each user gets a unique cart ID stored in `localStorage`
@@ -66,7 +72,8 @@ ecom-cart
 │ │ └── useCartId.js # Generates/returns unique cartId from localStorage
 │ ├── App.jsx
 │ ├── main.jsx
-│── index.css
+│ └── index.css
+|── index.html
 |── .env # Contains MONGODB_URL
 │── vite.config.js
 │── package.json
@@ -88,7 +95,7 @@ cd ecomCart
 npm install
 ```
 
-Create a .env file:
+Create a .env file in the root of the folder:
 
 ```bash
 MONGODB_URL=mongodb+srv://<your_username>:<your_password>@cluster.rcbzija.mongodb.net/assignment?appName=Cluster
@@ -131,7 +138,6 @@ POST /api/checkout?cartId=xxx
 
 ## How It Works
 
-
 - On first load, the frontend generates a unique cartId (via crypto.randomUUID()).
 - Products are fetched from FakeStore API and displayed.
 - When “Add to Cart” is clicked:
@@ -143,14 +149,3 @@ On checkout:
 - A mock receipt is returned.
 - Cart is deleted from MongoDB.
 - Local cart (and cartId) are cleared from browser storage.
-
-## Screenshots
-Page	Description
-
-Products	Product grid from FakeStore API
-
-Cart	Add, remove, update quantities
-
-Checkout	Enter name + email, receive receipt
-
-
