@@ -43,7 +43,7 @@ export default function Checkout() {
       >
         Complete Checkout
       </button>
-      <p className="text-center mt-2 text-gray-600">Total: ${cart.total}</p>
+      <p className="text-center mt-2 text-gray-600">Total: ${(cart.total).toFixed(2)}</p>
     </form>
   );
 }

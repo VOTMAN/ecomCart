@@ -119,7 +119,7 @@ export default function Cart() {
           })}
 
           <div className="text-right font-semibold text-lg">
-            Total: ${cart.total}
+            Total: ${(cart.total).toFixed(2)}
           </div>
 
           <Link
