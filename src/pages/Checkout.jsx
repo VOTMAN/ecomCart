@@ -4,7 +4,7 @@ import { useCart } from "../context/CartContext";
 import ReceiptModal from "../components/ReceiptModal";
 
 export default function Checkout() {
-  const { cart, emptyCart } = useCart();
+  const { cart, checkout } = useCart();
   const [form, setForm] = useState({ name: "", email: "" });
   const [receipt, setReceipt] = useState(null);
 
@@ -15,7 +15,7 @@ export default function Checkout() {
       ...form,
     });
     setReceipt(res.data);
-    emptyCart()
+    checkout()
   };
 
   if (receipt) return <ReceiptModal receipt={receipt} />;
@@ -43,7 +43,7 @@ export default function Checkout() {
       >
         Complete Checkout
       </button>
-      <p className="text-center mt-2 text-gray-600">Total: ₹{cart.total}</p>
+      <p className="text-center mt-2 text-gray-600">Total: ${cart.total}</p>
     </form>
   );
 }

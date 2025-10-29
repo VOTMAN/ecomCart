@@ -1,96 +1,142 @@
-import express from "express"
+import express from "express";
 import mongoose from "mongoose";
-import cors from "cors"
+import cors from "cors";
 import { configDotenv } from "dotenv";
 import CartModel from "./models/Cart.js";
-import products from "./data/products.js";
 
-configDotenv({ quiet: true })
+configDotenv({ quiet: true });
 
-const app = express()
+const app = express();
 const PORT = 5000;
-app.use(cors())
-app.use(express.json())
+app.use(cors());
+app.use(express.json());
 
-// console.log(process.env.MONGODB_URL)
-mongoose.connect(process.env.MONGODB_URL)
-  .then(() => console.log("Connected to Mongo"))
-  .catch((err) => console.log("Error connecting to Mongo: ", err))
+// MongoDB connection
+mongoose
+  .connect(process.env.MONGODB_URL)
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((err) => console.log("Mongo connection error:", err));
 
+/* ===========================
+   GET /api/products
+   Fetches products from Fake Store API
+=========================== */
+app.get("/api/products", async (req, res) => {
+  try {
+    const resp = await fetch("https://fakestoreapi.com/products?limit=10");
+    const data = await resp.json();
 
-app.get("/api/products", (req, res) => {
-    res.json(products)
-})
+    // Transform data to match your frontend's structure
+    const finalData = data.map((p) => ({
+      id: p.id,
+      name: p.title,
+      price: p.price,
+      img: p.image,
+    }));
 
+    res.json(finalData);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching products", error: err.message });
+  }
+});
+
+/* ===========================
+   POST /api/cart
+   Adds/updates product in the user's cart
+=========================== */
 app.post("/api/cart", async (req, res) => {
-    const { cartId, prodId, qty } = req.body
-    try {
-                
-        let cart = await CartModel.findOne({ cartId });
-        if (!cart) {
-            cart = new CartModel({ cartId, items: [], total: 0})
-        }        
-        
-        const product = products.find((p) => p.id == prodId);
-        if (!product) return res.status(404).json({ error: "Product not found" })
-        const prodIdStr = String(prodId);
-        const existItem = cart.items.find((i) => String(i.productId) === prodIdStr);
+  const { cartId, prodId, qty } = req.body;
 
-        if (existItem) {
-            existItem.qty += qty;
-        } else {
-            cart.items.push({
-                productId: product.id,
-                name: product.name,
-                price: product.price,
-                qty,
-            });
-        }
+  if (!cartId || !prodId || !qty) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
 
-        cart.items = cart.items.filter((i) => i.qty > 0);        
-        cart.total = cart.items.reduce((sum, i) => sum + i.price * i.qty, 0)
-        
-        await cart.save();
-        res.json(cart)
-    } catch (err) {
-        res.status(500).json({ message: "Error adding items", error: err.message })
+  try {
+    // Fetch the product info directly from Fake Store API
+    const resp = await fetch(`https://fakestoreapi.com/products/${prodId}`);
+    if (!resp.ok) return res.status(404).json({ error: "Product not found" });
+    const product = await resp.json();
+
+    let cart = await CartModel.findOne({ cartId });
+    if (!cart) {
+      cart = new CartModel({ cartId, items: [], total: 0 });
     }
-})
 
+    // Check if item already exists in cart
+    const existingItem = cart.items.find((i) => i.productId === prodId);
+
+    if (existingItem) {
+      existingItem.qty += qty;
+      if (existingItem.qty <= 0) {
+        // Remove if qty becomes zero
+        cart.items = cart.items.filter((i) => i.productId !== prodId);
+      }
+    } else if (qty > 0) {
+      // Add new item
+      cart.items.push({
+        productId: product.id,
+        name: product.title,
+        price: product.price,
+        qty,
+      });
+    }
+
+    // Recalculate total
+    cart.total = cart.items.reduce((sum, i) => sum + i.price * i.qty, 0);
+    await cart.save();
+
+    res.json(cart);
+  } catch (err) {
+    res.status(500).json({ message: "Error adding to cart", error: err.message });
+  }
+});
+
+/* ===========================
+   DELETE /api/cart/:id
+   Removes a product from the cart
+=========================== */
 app.delete("/api/cart/:id", async (req, res) => {
-    const { cartId } = req.query
-    const { id } = req.params
+  const { cartId } = req.query;
+  const { id } = req.params;
 
-    if (!cartId) {
-      return res.status(400).json({ message: "Missing cartId" });
+  if (!cartId) {
+    return res.status(400).json({ message: "Missing cartId" });
+  }
+
+  try {
+    const cart = await CartModel.findOne({ cartId });
+    if (!cart) {
+      return res.status(404).json({ message: "Cart not found" });
     }
 
-    try {
-        let cart = await CartModel.findOne({ cartId })
-        if (!cart) {
-            return res.status(404).json({ message: "Cart not found" });
-        }
+    cart.items = cart.items.filter((item) => item.productId != id);
+    cart.total = cart.items.reduce((sum, item) => sum + item.price * item.qty, 0);
 
-        cart.items = cart.items.filter((item) => item.productId != id);
-        const total = cart.total = cart.items.reduce((sum, item) => sum + item.price * item.qty, 0);
+    await cart.save();
+    res.json({ message: "Item removed", cart });
+  } catch (err) {
+    res.status(500).json({ message: "Error deleting item", error: err.message });
+  }
+});
 
-        await cart.save();
-        res.json({ message: "Item removed", cart, total });
-    } catch (err) {
-        res.status(500).json({ message: "Error deleting items", error: err.message })
-    }
-})
-
+/* ===========================
+   GET /api/cart
+   Returns the user's cart
+=========================== */
 app.get("/api/cart", async (req, res) => {
-    const { cartId } = req.query
-    try {
-        const cart = await CartModel.findOne({ cartId })
-        return res.json(cart || { items: [], total: 0 })
-    } catch (err) {
-        res.status(500).json({ message: "Error getting cart", error: err.message })
-    }
-})
+  const { cartId } = req.query;
+  try {
+    const cart = await CartModel.findOne({ cartId });
+    res.json(cart || { items: [], total: 0 });
+  } catch (err) {
+    res.status(500).json({ message: "Error getting cart", error: err.message });
+  }
+});
 
+/* ===========================
+   POST /api/checkout
+   Clears the cart & returns mock receipt
+=========================== */
 app.post("/api/checkout", async (req, res) => {
   try {
     const { cartId, name, email } = req.body;
@@ -100,9 +146,7 @@ app.post("/api/checkout", async (req, res) => {
     }
 
     const cart = await CartModel.findOne({ cartId });
-    if (!cart) {
-      return res.status(404).json({ error: "Cart not found" });
-    }
+    if (!cart) return res.status(404).json({ error: "Cart not found" });
 
     const total = cart.items.reduce((sum, item) => sum + item.price * item.qty, 0);
 
@@ -117,6 +161,7 @@ app.post("/api/checkout", async (req, res) => {
       message: "Mock checkout successful — no payment processed.",
     };
 
+    // Clear the cart after checkout
     await CartModel.deleteOne({ cartId });
 
     res.json(receipt);
@@ -126,5 +171,4 @@ app.post("/api/checkout", async (req, res) => {
   }
 });
 
-
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`))
+app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));

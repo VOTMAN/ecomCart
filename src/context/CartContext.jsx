@@ -1,47 +1,84 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import useCartId from "../utils/useCartId";
-import axios from "axios";
 
 const CartContext = createContext();
 export const useCart = () => useContext(CartContext);
 
-const CART_API = "http://localhost:5000/api/cart";
-
 export const CartProvider = ({ children }) => {
-  const [cartId] = useState(() => {
-    let id = localStorage.getItem("cartId");
-    if (!id) {
-      id = useCartId();
-      localStorage.setItem("cartId", id);
-    }
-    return id;
-  });
+  const cartId = useCartId();
   const [cart, setCart] = useState({ items: [], total: 0 });
+  const [loaded, setLoaded] = useState(false);
+  const [loadingAction, setLoadingAction] = useState(null); // "add" | "update" | "remove" | "checkout"
 
-  const fetchCart = async () => {
-    const res = await axios.get(CART_API, { params: { cartId } });
-    setCart(res.data || { items: [], total: 0 });
+  useEffect(() => {
+    if (!cartId) return;
+    const fetchCart = async () => {
+      setLoaded(false);
+      const resp = await fetch(`http://localhost:5000/api/cart?cartId=${cartId}`);
+      const data = await resp.json();
+      setCart(data);
+      setLoaded(true);
+    };
+    fetchCart();
+  }, [cartId]);
+
+  const modifyCart = async (prodId, qty, action = "add") => {
+    setLoadingAction(action);
+    try {
+      const resp = await fetch("http://localhost:5000/api/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cartId, prodId, qty }),
+      });
+      const data = await resp.json();
+      setCart(data);
+    } catch (err) {
+      console.error("Error modifying cart:", err);
+    } finally {
+      setLoadingAction(null);
+    }
   };
 
-  const addToCart = async (prodId, qty = 1) => {
-    const res = await axios.post(CART_API, { cartId, prodId, qty });
-    setCart(res.data);
+  const addToCart = (prodId) => modifyCart(prodId, 1, "add");
+  const updateQty = (prodId, qty) => modifyCart(prodId, qty, "update");
+
+  const deleteItem = async (id) => {
+    setLoadingAction("remove");
+    try {
+      const resp = await fetch(`http://localhost:5000/api/cart/${id}?cartId=${cartId}`, {
+        method: "DELETE",
+      });
+      const data = await resp.json();
+      setCart(data.cart);
+    } catch (err) {
+      console.error("Error deleting item:", err);
+    } finally {
+      setLoadingAction(null);
+    }
   };
 
-  const removeFromCart = async (prodId) => {
-    const res = await axios.delete(`${CART_API}/${prodId}`, { params: { cartId } });
-    setCart(res.data.cart);
+  const checkout = async (name, email) => {
+    setLoadingAction("checkout");
+    try {
+      const resp = await fetch("http://localhost:5000/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cartId, name, email }),
+      });
+      const data = await resp.json();
+      setCart({ items: [], total: 0 });
+      return data;
+    } catch (err) {
+      console.error("Checkout error:", err);
+    } finally {
+      setLoadingAction(null);
+    }
   };
-
-  const emptyCart = async () => {
-    // const res = await axios.post(`http://localhost:5000/api/clearCart`, { cartId })
-    setCart({ items: [], total: 0 })
-  }
-
-  useEffect(() => { fetchCart(); }, []);
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, emptyCart }}>
+    <CartContext.Provider
+      value={{ cart, addToCart, updateQty, deleteItem, checkout, loaded, loadingAction }}
+    >
       {children}
     </CartContext.Provider>
   );

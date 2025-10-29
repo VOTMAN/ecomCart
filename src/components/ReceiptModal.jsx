@@ -5,7 +5,7 @@ export default function ReceiptModal({ receipt }) {
     <div className="p-6 text-center border rounded-lg shadow max-w-md mx-auto mt-10">
       <h2 className="text-xl font-semibold mb-3">✅ Order Confirmed!</h2>
       <p>Order ID: {receipt.orderId}</p>
-      <p>Total: ₹{receipt.total}</p>
+      <p>Total: ${receipt.total}</p>
       <p className="text-gray-600 mt-2">Thanks for shopping with us!</p>
       <Link
         to="/"
