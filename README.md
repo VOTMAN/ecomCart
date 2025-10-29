@@ -57,7 +57,7 @@ ecom-cart
 │ │ └── Cart.js # Mongoose schema for cart data
 │ └── index.js # Express server, routes, and Mongo connection
 │
-├── src/
+├── src/ (frontend)
 │ ├── components/
 │ │ ├── Navbar.jsx
 │ │ ├── ProductCard.jsx
