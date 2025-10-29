@@ -11,7 +11,6 @@ const PORT = 5000;
 app.use(cors());
 app.use(express.json());
 
-// MongoDB connection
 mongoose
   .connect(process.env.MONGODB_URL)
   .then(() => console.log("Connected to MongoDB"))
@@ -52,7 +51,6 @@ app.post("/api/cart", async (req, res) => {
   }
 
   try {
-    // Fetch the product info directly from Fake Store API
     const resp = await fetch(`https://fakestoreapi.com/products/${prodId}`);
     if (!resp.ok) return res.status(404).json({ error: "Product not found" });
     const product = await resp.json();
@@ -62,17 +60,14 @@ app.post("/api/cart", async (req, res) => {
       cart = new CartModel({ cartId, items: [], total: 0 });
     }
 
-    // Check if item already exists in cart
     const existingItem = cart.items.find((i) => i.productId === prodId);
 
     if (existingItem) {
       existingItem.qty += qty;
       if (existingItem.qty <= 0) {
-        // Remove if qty becomes zero
         cart.items = cart.items.filter((i) => i.productId !== prodId);
       }
     } else if (qty > 0) {
-      // Add new item
       cart.items.push({
         productId: product.id,
         name: product.title,
@@ -81,7 +76,6 @@ app.post("/api/cart", async (req, res) => {
       });
     }
 
-    // Recalculate total
     cart.total = cart.items.reduce((sum, i) => sum + i.price * i.qty, 0);
     await cart.save();
 
@@ -161,7 +155,6 @@ app.post("/api/checkout", async (req, res) => {
       message: "Mock checkout successful — no payment processed.",
     };
 
-    // Clear the cart after checkout
     await CartModel.deleteOne({ cartId });
 
     res.json(receipt);
@@ -171,4 +164,4 @@ app.post("/api/checkout", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
