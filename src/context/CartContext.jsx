@@ -14,7 +14,7 @@ export const CartProvider = ({ children }) => {
     if (!cartId) return;
     const fetchCart = async () => {
       setLoaded(false);
-      const resp = await fetch(`http://localhost:5000/api/cart?cartId=${cartId}`);
+      const resp = await fetch(`https://ecomcartserver.onrender.com/api/cart?cartId=${cartId}`);
       const data = await resp.json();
       setCart(data);
       setLoaded(true);
@@ -25,7 +25,7 @@ export const CartProvider = ({ children }) => {
   const modifyCart = async (prodId, qty, action = "add") => {
     setLoadingAction(action);
     try {
-      const resp = await fetch("http://localhost:5000/api/cart", {
+      const resp = await fetch("https://ecomcartserver.onrender.com/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cartId, prodId, qty }),
@@ -45,7 +45,7 @@ export const CartProvider = ({ children }) => {
   const deleteItem = async (id) => {
     setLoadingAction("remove");
     try {
-      const resp = await fetch(`http://localhost:5000/api/cart/${id}?cartId=${cartId}`, {
+      const resp = await fetch(`https://ecomcartserver.onrender.com/api/cart/${id}?cartId=${cartId}`, {
         method: "DELETE",
       });
       const data = await resp.json();
@@ -60,7 +60,7 @@ export const CartProvider = ({ children }) => {
   const checkout = async (name, email) => {
     setLoadingAction("checkout");
     try {
-      const resp = await fetch("http://localhost:5000/api/checkout", {
+      const resp = await fetch("https://ecomcartserver.onrender.com/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cartId, name, email }),
