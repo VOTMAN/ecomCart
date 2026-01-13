@@ -10,7 +10,7 @@ export default function Checkout() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await axios.post("http://localhost:5000/api/checkout", {
+    const res = await axios.post("https://ecc.vnarnav.online/api/checkout", {
       cartId: localStorage.getItem("cartId"),
       ...form,
     });
