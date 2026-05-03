@@ -12,7 +12,7 @@ export default function Products() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await axios.get("https://ecc.vnarnav.online/api/products");
+        const res = await axios.get("https://ecomcartserver.onrender.com/api/products");
         setProducts(res.data);
       } catch (err) {
         console.error("Error fetching products:", err);
